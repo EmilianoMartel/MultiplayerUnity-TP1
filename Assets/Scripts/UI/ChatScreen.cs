@@ -31,12 +31,12 @@ public class ChatScreen : MonoBehaviour
         chatScroll.verticalNormalizedPosition = 0f;
     }
 
-    private void OnReceiveData(byte[] data)
+    private void OnReceiveData(MessageData data)
     {
         if (TcpManager.Instance.IsServer)
-            TcpManager.Instance.BroadcastData(data);
+            //TcpManager.Instance.BroadcastData(data);
 
-        chatText.text += Encoding.UTF8.GetString(data, 0, data.Length) + Environment.NewLine;
+        //chatText.text += Encoding.UTF8.GetString(data, 0, data.Length) + Environment.NewLine;
         UpdateScroll();
     }
 
@@ -45,7 +45,7 @@ public class ChatScreen : MonoBehaviour
         if (string.IsNullOrEmpty(messageInputField.text))
             return;
 
-        byte[] data = Encoding.UTF8.GetBytes(messageInputField.text);
+        string data = messageInputField.text;
 
         if (TcpManager.Instance.IsServer)
         {
@@ -55,7 +55,7 @@ public class ChatScreen : MonoBehaviour
         }
         else
         {
-            TcpManager.Instance.SendDataToServer(data);
+            TcpManager.Instance.SendDataToServer(messageInputField.text);
         }
 
         messageInputField.text = string.Empty;

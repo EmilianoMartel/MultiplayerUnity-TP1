@@ -2,9 +2,11 @@ using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Net;
 using System;
+using System.Runtime.InteropServices;
 
 public class TcpManager : MonoBehaviourSingleton<TcpManager>
 {
+    private string _name = "Anonym";
     private readonly List<TcpConnectedClient> serverClients = new List<TcpConnectedClient>();
     private TcpConnectedClient connectedClient;
     private TcpListener listener;
@@ -12,7 +14,7 @@ public class TcpManager : MonoBehaviourSingleton<TcpManager>
 
     public bool IsServer { get; private set; }
 
-    public event Action<byte[]> OnDataReceived;
+    public event Action<MessageData> OnDataReceived;
     public event Action OnClientConnected;
 
 
@@ -86,7 +88,8 @@ public class TcpManager : MonoBehaviourSingleton<TcpManager>
 
     public void ReceiveData(byte[] data)
     {
-        OnDataReceived?.Invoke(data);
+        MessageData msg = MessageConverter.BytesToMessage(data);
+        OnDataReceived?.Invoke(msg);
     }
 
     public void DisconnectClient(TcpConnectedClient client)
@@ -95,14 +98,25 @@ public class TcpManager : MonoBehaviourSingleton<TcpManager>
             serverClients.Remove(client);
     }
 
-    public void BroadcastData(byte[] data)
+    public void BroadcastData(string message)
     {
+        MessageData msg = new MessageData();
+        msg.ClientID = _name;
+        msg.Message = message;
+
+        byte[] data = MessageConverter.MessageToBytes(msg);
+
         foreach (TcpConnectedClient client in serverClients)
             client.SendData(data);
     }
 
-    public void SendDataToServer(byte[] data)
+    public void SendDataToServer(string message)
     {
+        MessageData msg = new MessageData();
+        msg.ClientID = _name;
+        msg.Message = message;
+
+        byte[] data = MessageConverter.MessageToBytes(msg);
         connectedClient.SendData(data);
     }
 }
