@@ -6,7 +6,7 @@ using UnityEngine;
 
 public class ChatScreen : MonoBehaviour
 {
-    /*[SerializeField] private ScrollRect chatScroll;
+    [SerializeField] private ScrollRect chatScroll;
     [SerializeField] private TMP_Text chatText;
     [SerializeField] private TMP_InputField messageInputField;
     [SerializeField] private Button sendButton;
@@ -59,5 +59,5 @@ public class ChatScreen : MonoBehaviour
         }
 
         messageInputField.text = string.Empty;
-    }*/
+    }
 }

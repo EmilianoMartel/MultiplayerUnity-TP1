@@ -14,7 +14,6 @@ public class NetworkSetupScreen : MonoBehaviour
 
     void Awake()
     {
-        //chatScreen.SetActive(false);
         startSeverButton.onClick.AddListener(OnStartServer);
         connectToServerButton.onClick.AddListener(OnConnectToServer);
     }
@@ -29,7 +28,7 @@ public class NetworkSetupScreen : MonoBehaviour
     private void OnStartServer()
     {
         int port = Convert.ToInt32(serverPortField.text);
-        //TcpManager.Instance.StartServer(port);
+        TcpManager.Instance.StartServer(port);
 
         //MoveToChatScreen();
     }
@@ -39,7 +38,7 @@ public class NetworkSetupScreen : MonoBehaviour
         IPAddress ipAddress = IPAddress.Parse(serverIpField.text);
         int port = Convert.ToInt32(serverPortField.text);
 
-       // TcpManager.Instance.StartClient(ipAddress, port);
+        TcpManager.Instance.StartClient(ipAddress, port);
         //TcpManager.Instance.OnClientConnected += MoveToChatScreen;
     }
 }
