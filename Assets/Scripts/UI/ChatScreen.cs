@@ -15,13 +15,13 @@ public class ChatScreen : MonoBehaviour
     void Start()
     {
         chatText.text = string.Empty;
-        TcpManager.Instance.OnDataReceived += OnReceiveData;
+        //TcpManager.Instance.OnDataReceived += OnReceiveData;
         sendButton.onClick.AddListener(OnSendMessage);
     }
 
     void OnDestroy()
     {
-        TcpManager.Instance.OnDataReceived -= OnReceiveData;
+        //TcpManager.Instance.OnDataReceived -= OnReceiveData;
         sendButton.onClick.RemoveListener(OnSendMessage);
     }
 
@@ -33,7 +33,7 @@ public class ChatScreen : MonoBehaviour
 
     private void OnReceiveData(MessageData data)
     {
-        if (TcpManager.Instance.IsServer)
+       // if (TcpManager.Instance.IsServer)
             //TcpManager.Instance.BroadcastData(data);
 
         //chatText.text += Encoding.UTF8.GetString(data, 0, data.Length) + Environment.NewLine;
@@ -47,16 +47,16 @@ public class ChatScreen : MonoBehaviour
 
         string data = messageInputField.text;
 
-        if (TcpManager.Instance.IsServer)
-        {
-            chatText.text += messageInputField.text + Environment.NewLine;
-            UpdateScroll();
-            TcpManager.Instance.BroadcastData(data);
-        }
-        else
-        {
-            TcpManager.Instance.SendDataToServer(messageInputField.text);
-        }
+        //if (TcpManager.Instance.IsServer)
+        //{
+        //    chatText.text += messageInputField.text + Environment.NewLine;
+        //    UpdateScroll();
+        //    TcpManager.Instance.BroadcastData(data);
+        //}
+        //else
+        //{
+        //    TcpManager.Instance.SendDataToServer(messageInputField.text);
+        //}
 
         messageInputField.text = string.Empty;
     }

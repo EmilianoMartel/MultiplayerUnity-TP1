@@ -6,38 +6,42 @@ using UnityEngine;
 
 public class TcpConnectedClient
 {
-    private TcpClient _client;
-    private Queue<byte[]> _dataReceived = new Queue<byte[]>();
-    private byte[] _readBuffer = new byte[5000];
-    private object _readHandler = new object();
+    private TcpClient client;
+    private Queue<byte[]> dataReceived = new Queue<byte[]>();
+    private byte[] readBuffer = new byte[5000];
+    private object readHandler = new object();
 
-    private NetworkStream NetworkStream => _client?.GetStream();
+    private NetworkStream NetworkStream => client?.GetStream();
 
+    public Action<TcpConnectedClient> DisconectClient;
+    public Action<byte[]> RecibedData;
 
     public TcpConnectedClient(TcpClient client)
     {
-        this._client = client;
+        this.client = client;
+    }
 
-        if (TcpManager.Instance.IsServer)
-            NetworkStream.BeginRead(_readBuffer, 0, _readBuffer.Length, OnRead, null);
+    public void StartBeginRead()
+    {
+        NetworkStream.BeginRead(readBuffer, 0, readBuffer.Length, OnRead, null);
     }
 
     private void OnRead(IAsyncResult asyncResult)
     {
         if (NetworkStream.EndRead(asyncResult) == 0)
         {
-            TcpManager.Instance.DisconnectClient(this);
+            DisconectClient?.Invoke(this);
             return;
         }
 
-        lock (_readHandler)
+        lock (readHandler)
         {
-            byte[] data = _readBuffer.TakeWhile(b => (char)b != '\0').ToArray();
-            _dataReceived.Enqueue(data);
+            byte[] data = readBuffer.TakeWhile(b => (char)b != '\0').ToArray();
+            dataReceived.Enqueue(data);
         }
 
-        Array.Clear(_readBuffer, 0, _readBuffer.Length);
-        NetworkStream.BeginRead(_readBuffer, 0, _readBuffer.Length, OnRead, null);
+        Array.Clear(readBuffer, 0, readBuffer.Length);
+        NetworkStream.BeginRead(readBuffer, 0, readBuffer.Length, OnRead, null);
     }
 
     public void SendData(byte[] data)
@@ -47,24 +51,24 @@ public class TcpConnectedClient
 
     public void FlushReceivedData()
     {
-        lock (_readHandler)
+        lock (readHandler)
         {
-            while (_dataReceived.Count > 0)
+            while (dataReceived.Count > 0)
             {
-                byte[] data = _dataReceived.Dequeue();
-                TcpManager.Instance.ReceiveData(data);
+                byte[] data = dataReceived.Dequeue();
+                RecibedData?.Invoke(data);
             }
         }
     }
 
     public void OnEndConnection(IAsyncResult asyncResult)
     {
-        _client.EndConnect(asyncResult);
-        NetworkStream.BeginRead(_readBuffer, 0, _readBuffer.Length, OnRead, null);
+        client.EndConnect(asyncResult);
+        NetworkStream.BeginRead(readBuffer, 0, readBuffer.Length, OnRead, null);
     }
 
     public void CloseClient()
     {
-        _client.Close();
+        client.Close();
     }
 }

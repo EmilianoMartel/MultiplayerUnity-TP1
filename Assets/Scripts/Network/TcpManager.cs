@@ -1,122 +1,61 @@
+using NUnit.Framework;
 using System.Collections.Generic;
-using System.Net.Sockets;
 using System.Net;
-using System;
-using System.Runtime.InteropServices;
+using UnityEngine;
+
+public enum Role
+{
+    None,
+    Client,
+    Server,
+    ServerClient
+}
 
 public class TcpManager : MonoBehaviourSingleton<TcpManager>
 {
     private string _name = "Anonym";
-    private readonly List<TcpConnectedClient> serverClients = new List<TcpConnectedClient>();
-    private TcpConnectedClient connectedClient;
-    private TcpListener listener;
-    private bool clientJustConnected;
+    private List<TcpConnectionManager> _tcpManagers = new();
 
-    public bool IsServer { get; private set; }
+    private bool _wasSetted = false;
 
-    public event Action<MessageData> OnDataReceived;
-    public event Action OnClientConnected;
-
-
-    void Update()
+    private void Update()
     {
-        if (IsServer)
-            UpdateServer();
-        else
-            UpdateClient();
+        if(!_wasSetted) return;
+
+        foreach (TcpConnectionManager tcp in _tcpManagers)
+        {
+            tcp.Update();
+        }
     }
 
-    void OnDestroy()
+    /// <summary>
+    /// This function return false in case the conection or election fail.
+    /// </summary>
+    /// <param name="role"></param>
+    /// <returns></returns>
+    public bool TcpSetup(Role role, IPAddress serverIp, int port, string name)
     {
-        listener?.Stop();
+        if(name != "") _name = name;
 
-        foreach (TcpConnectedClient client in serverClients)
-            client.CloseClient();
+        switch (role)
+        {
+            case Role.None:
+                return false;
+            case Role.Client:
+                _wasSetted = true;
+                _tcpManagers.Add(new TcpClientManager(serverIp,port));
+                return true;
+            case Role.Server:
+                _wasSetted = true;
+                _tcpManagers.Add(new TcpServerManager(serverIp, port));
+                return true;
+            case Role.ServerClient:
+                _wasSetted = true;
+                _tcpManagers.Add(new TcpServerManager(serverIp, port));
+                _tcpManagers.Add(new TcpClientManager(serverIp, port));
+                return true;
+        }
 
-        connectedClient.CloseClient();
-    }
-
-
-    private void UpdateServer()
-    {
-        foreach (TcpConnectedClient client in serverClients)
-            client.FlushReceivedData();
-    }
-
-    private void UpdateClient()
-    {
-        if (clientJustConnected)
-            OnClientConnected?.Invoke();
-
-        connectedClient?.FlushReceivedData();
-    }
-
-    private void OnClientConnectToServer(IAsyncResult asyncResult)
-    {
-        TcpClient client = listener.EndAcceptTcpClient(asyncResult);
-        TcpConnectedClient connectedClient = new TcpConnectedClient(client);
-
-        serverClients.Add(connectedClient);
-        listener.BeginAcceptTcpClient(OnClientConnectToServer, null);
-    }
-
-    private void OnConnectClient(IAsyncResult asyncResult)
-    {
-        connectedClient.OnEndConnection(asyncResult);
-        clientJustConnected = true;
-    }
-
-    public void StartServer(int port)
-    {
-        IsServer = true;
-        listener = new TcpListener(IPAddress.Any, port);
-
-        listener.Start();
-        listener.BeginAcceptTcpClient(OnClientConnectToServer, null);
-    }
-
-    public void StartClient(IPAddress serverIp, int port)
-    {
-        IsServer = false;
-
-        TcpClient client = new TcpClient();
-
-        connectedClient = new TcpConnectedClient(client);
-
-        client.BeginConnect(serverIp, port, OnConnectClient, null);
-    }
-
-    public void ReceiveData(byte[] data)
-    {
-        MessageData msg = MessageConverter.BytesToMessage(data);
-        OnDataReceived?.Invoke(msg);
-    }
-
-    public void DisconnectClient(TcpConnectedClient client)
-    {
-        if (serverClients.Contains(client))
-            serverClients.Remove(client);
-    }
-
-    public void BroadcastData(string message)
-    {
-        MessageData msg = new MessageData();
-        msg.ClientID = _name;
-        msg.Message = message;
-
-        byte[] data = MessageConverter.MessageToBytes(msg);
-
-        foreach (TcpConnectedClient client in serverClients)
-            client.SendData(data);
-    }
-
-    public void SendDataToServer(string message)
-    {
-        MessageData msg = new MessageData();
-        msg.ClientID = _name;
-        msg.Message = message;
-
-        byte[] data = MessageConverter.MessageToBytes(msg);
-        connectedClient.SendData(data);
+        return false;
     }
 }
