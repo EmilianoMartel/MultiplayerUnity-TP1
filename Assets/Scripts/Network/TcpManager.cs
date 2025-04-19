@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 
 public enum Role
@@ -16,12 +17,10 @@ public enum Role
 public class TcpManager : MonoBehaviourSingleton<TcpManager>
 {
     private string _name = "Anonym";
-    private List<TcpConnectionTypes> _tcpManagers = new();
+    private List<ConnectionTypes> _networkManagers = new();
     private bool _wasSetted = false;
 
     public string NameID { get { return _name; } }
-
-    public List<TcpConnectionTypes> TcpManagers => _tcpManagers;
 
     public Action<byte[]> OnDataReceived;
     public Action GoToChatScreen;
@@ -31,11 +30,11 @@ public class TcpManager : MonoBehaviourSingleton<TcpManager>
     {
         if (!_wasSetted) return;
 
-        foreach (var tcp in _tcpManagers)
+        foreach (var tcp in _networkManagers)
             tcp.Update();
     }
 
-    public bool TcpSetup(Role role, IPAddress serverIp, int port, string name)
+    public bool TcpSetup(Role role, IPAddress serverIp, int port, string name, string typeConecction)
     {
         if (!string.IsNullOrEmpty(name)) _name = name;
 
@@ -46,22 +45,21 @@ public class TcpManager : MonoBehaviourSingleton<TcpManager>
 
             case Role.Client:
                 _wasSetted = true;
-                _tcpManagers.Add(new TcpClientManager(serverIp, port));
-                _tcpManagers[0].OnDataReceived += OnDataReceived;
+
                 GoToChatScreen?.Invoke();
                 return true;
 
             case Role.Server:
                 _wasSetted = true;
-                _tcpManagers.Add(new TcpServerManager(serverIp, port));
+                _networkManagers.Add(new TcpServerManager(serverIp, port));
                 GoToServerScren?.Invoke();
                 return true;
 
             case Role.ServerClient:
                 _wasSetted = true;
-                _tcpManagers.Add(new TcpServerManager(serverIp, port));
-                _tcpManagers.Add(new TcpClientManager(serverIp, port));
-                _tcpManagers[0].OnDataReceived += OnDataReceived;
+                _networkManagers.Add(new TcpServerManager(serverIp, port));
+                _networkManagers.Add(new TcpClientManager(serverIp, port));
+                _networkManagers[0].OnDataReceived += OnDataReceived;
                 GoToChatScreen?.Invoke();
                 return true;
         }
@@ -71,7 +69,7 @@ public class TcpManager : MonoBehaviourSingleton<TcpManager>
 
     public void ManageData(byte[] data)
     {
-        foreach (var tcp in _tcpManagers)
+        foreach (var tcp in _networkManagers)
         {
             switch (tcp)
             {
@@ -83,5 +81,50 @@ public class TcpManager : MonoBehaviourSingleton<TcpManager>
                     break;
             }
         }
+    }
+
+    private void ConectionElection()
+    {
+
+    }
+
+    private void CreateServer(IPAddress serverIp, int port, string typeConecction)
+    {
+        if (typeConecction == "TCP")
+            CreateTcpServer(serverIp, port);
+        else
+            CreateUdpServer(serverIp, port);
+    }
+
+    private void CreateTcpServer(IPAddress serverIp, int port)
+    {
+        _networkManagers.Add(new TcpServerManager(serverIp, port));
+    }
+
+    private void CreateUdpServer(IPAddress serverIp, int port)
+    {
+        _networkManagers.Add(new UdpServerManager(port));
+    }
+
+    private void CreateClient(IPAddress serverIp, int port, string typeConecction)
+    {
+        if (typeConecction == "TCP")
+            CreateTcpClient(serverIp,port);
+        else
+            CreateUdpClient(serverIp,port);
+    }
+
+    private void CreateTcpClient(IPAddress serverIp, int port)
+    {
+        TcpClientManager temp = new TcpClientManager(serverIp, port);
+        _networkManagers.Add(temp);
+        temp.OnDataReceived += OnDataReceived;
+    }
+
+    private void CreateUdpClient(IPAddress serverIp, int port)
+    {
+        UdpClientManager temp = new UdpClientManager(serverIp, port);
+        _networkManagers.Add(temp);
+        temp.OnDataReceived += OnDataReceived;
     }
 }

@@ -2,10 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
-using UnityEditor.Experimental.GraphView;
-using UnityEditor.PackageManager;
 
-public abstract class TcpConnectionTypes
+public abstract class ConnectionTypes
 {
     public Action<byte[]> OnDataReceived;
     public Action OnClientConnected;
@@ -14,7 +12,7 @@ public abstract class TcpConnectionTypes
     public virtual void Update() { }
 }
 
-public class TcpServerManager : TcpConnectionTypes
+public class TcpServerManager : ConnectionTypes
 {
     private readonly List<TcpConnectedClient> _serverClients = new();
     private readonly TcpListener _listener;
@@ -64,7 +62,7 @@ public class TcpServerManager : TcpConnectionTypes
     }
 }
 
-public class TcpClientManager : TcpConnectionTypes
+public class TcpClientManager : ConnectionTypes
 {
     private TcpConnectedClient _client;
     private bool _clientJustConnected;
@@ -103,5 +101,73 @@ public class TcpClientManager : TcpConnectionTypes
     {
         _client.OnEndConnection(asyncResult);
         _clientJustConnected = true;
+    }
+}
+
+public class UdpServerManager : ConnectionTypes
+{
+    private UdpClient _udp;
+    private IPEndPoint _listenEndPoint;
+
+    public UdpServerManager(int port)
+    {
+        _listenEndPoint = new IPEndPoint(IPAddress.Any, port);
+        _udp = new UdpClient(_listenEndPoint);
+
+        _udp.BeginReceive(OnReceive, null);
+    }
+
+    private void OnReceive(IAsyncResult ar)
+    {
+        byte[] data = _udp.EndReceive(ar, ref _listenEndPoint);
+        OnDataReceived?.Invoke(data);
+
+        _udp.BeginReceive(OnReceive, null);
+    }
+
+    public void BroadcastData(byte[] data, List<IPEndPoint> clients)
+    {
+        foreach (var ep in clients)
+            _udp.Send(data, data.Length, ep);
+    }
+
+    public override void Stop()
+    {
+        _udp?.Close();
+    }
+}
+
+public class UdpClientManager : ConnectionTypes
+{
+    private UdpClient _udp;
+    private IPEndPoint _serverEndPoint;
+
+    public UdpClientManager(IPAddress serverIp, int port)
+    {
+        _udp = new UdpClient();
+        _serverEndPoint = new IPEndPoint(serverIp, port);
+
+        _udp.Connect(_serverEndPoint);
+        _udp.BeginReceive(OnReceive, null);
+    }
+
+    private void OnReceive(IAsyncResult ar)
+    {
+        IPEndPoint remote = null;
+        byte[] data = _udp.EndReceive(ar, ref remote);
+
+        OnDataReceived?.Invoke(data);
+
+        _udp.BeginReceive(OnReceive, null);
+    }
+
+    public void SendDataToServer(byte[] data)
+    {
+        _udp.Send(data, data.Length);
+    }
+
+    public override void Stop()
+    {
+        _udp?.Close();
     }
 }
