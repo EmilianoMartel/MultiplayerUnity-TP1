@@ -9,6 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3920190914885202170}
+  - component: {fileID: 6203906526326059910}
   m_Layer: 5
   m_Name: FullMessage
   m_TagString: Untagged
@@ -37,6 +38,20 @@ RectTransform:
   m_AnchoredPosition: {x: 52.90869, y: 12.5}
   m_SizeDelta: {x: 811.3269, y: 75}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &6203906526326059910
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1028218161371287727}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 977eef39a4a4cfd44bd452230ba33f76, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _name: {fileID: 4397406335338916589}
+  _message: {fileID: 7820526627509907205}
 --- !u!1 &6391079839310705243
 GameObject:
   m_ObjectHideFlags: 0

@@ -6,58 +6,60 @@ using UnityEngine;
 
 public class ChatScreen : MonoBehaviour
 {
-    [SerializeField] private ScrollRect chatScroll;
-    [SerializeField] private TMP_Text chatText;
-    [SerializeField] private TMP_InputField messageInputField;
-    [SerializeField] private Button sendButton;
+    [SerializeField] private ScrollRect _chatScroll;
+    [SerializeField] private Transform _contentParent;
+    [SerializeField] private Message _chatText;
+    [SerializeField] private TMP_InputField _messageInputField;
+    [SerializeField] private Button _sendButton;
 
-
-    void Start()
+    private void Start()
     {
-        chatText.text = string.Empty;
-        //TcpManager.Instance.OnDataReceived += OnReceiveData;
-        sendButton.onClick.AddListener(OnSendMessage);
+        TcpManager.Instance.OnDataReceived += OnReceiveData;
+
+        _sendButton.onClick.AddListener(OnSendMessage);
     }
 
-    void OnDestroy()
+    private void OnDestroy()
     {
-        //TcpManager.Instance.OnDataReceived -= OnReceiveData;
-        sendButton.onClick.RemoveListener(OnSendMessage);
-    }
+        TcpManager.Instance.OnDataReceived -= OnReceiveData;
 
+        _sendButton.onClick.RemoveListener(OnSendMessage);
+    }
 
     private void UpdateScroll()
     {
-        chatScroll.verticalNormalizedPosition = 0f;
+        _chatScroll.verticalNormalizedPosition = 0f;
     }
 
-    private void OnReceiveData(MessageData data)
+    private void OnReceiveData(byte[] data)
     {
-       // if (TcpManager.Instance.IsServer)
-            //TcpManager.Instance.BroadcastData(data);
+        MessageData message = MessageConverter.BytesToMessage(data);
 
-        //chatText.text += Encoding.UTF8.GetString(data, 0, data.Length) + Environment.NewLine;
+        Message temp = Instantiate(_chatText, _contentParent);
+        temp.SetMessage(message);
+
         UpdateScroll();
     }
 
     private void OnSendMessage()
     {
-        if (string.IsNullOrEmpty(messageInputField.text))
+        if (string.IsNullOrEmpty(_messageInputField.text))
             return;
 
-        string data = messageInputField.text;
+        MessageData msgData = new MessageData
+        {
+            ClientID = TcpManager.Instance.NameID,
+            Message = _messageInputField.text
+        };
 
-        //if (TcpManager.Instance.IsServer)
-        //{
-        //    chatText.text += messageInputField.text + Environment.NewLine;
-        //    UpdateScroll();
-        //    TcpManager.Instance.BroadcastData(data);
-        //}
-        //else
-        //{
-        //    TcpManager.Instance.SendDataToServer(messageInputField.text);
-        //}
+        byte[] data = MessageConverter.MessageToBytes(msgData);
 
-        messageInputField.text = string.Empty;
+        Message temp = Instantiate(_chatText, _contentParent);
+        temp.SetMessage(msgData);
+        UpdateScroll();
+
+        TcpManager.Instance.ManageData(data);
+
+        _messageInputField.text = string.Empty;
     }
 }

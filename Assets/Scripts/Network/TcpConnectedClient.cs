@@ -3,13 +3,16 @@ using System.Linq;
 using System.Net.Sockets;
 using System;
 using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEditor.Experimental.GraphView;
+using System.Net;
 
 public class TcpConnectedClient
 {
     private TcpClient client;
-    private Queue<byte[]> dataReceived = new Queue<byte[]>();
-    private byte[] readBuffer = new byte[5000];
-    private object readHandler = new object();
+    private readonly Queue<byte[]> dataReceived = new();
+    private readonly byte[] readBuffer = new byte[5000];
+    private readonly object readHandler = new();
 
     private NetworkStream NetworkStream => client?.GetStream();
 
@@ -23,7 +26,12 @@ public class TcpConnectedClient
 
     public void StartBeginRead()
     {
-        NetworkStream.BeginRead(readBuffer, 0, readBuffer.Length, OnRead, null);
+        NetworkStream?.BeginRead(readBuffer, 0, readBuffer.Length, OnRead, null);
+    }
+
+    public void StartBeginConnected(IPAddress serverIp, int port, AsyncCallback onConnectClient)
+    {
+        client.BeginConnect(serverIp, port, onConnectClient, null);
     }
 
     private void OnRead(IAsyncResult asyncResult)
@@ -46,7 +54,7 @@ public class TcpConnectedClient
 
     public void SendData(byte[] data)
     {
-        NetworkStream.Write(data, 0, data.Length);
+        NetworkStream?.Write(data, 0, data.Length);
     }
 
     public void FlushReceivedData()
@@ -54,21 +62,18 @@ public class TcpConnectedClient
         lock (readHandler)
         {
             while (dataReceived.Count > 0)
-            {
-                byte[] data = dataReceived.Dequeue();
-                RecibedData?.Invoke(data);
-            }
+                RecibedData?.Invoke(dataReceived.Dequeue());
         }
     }
 
     public void OnEndConnection(IAsyncResult asyncResult)
     {
         client.EndConnect(asyncResult);
-        NetworkStream.BeginRead(readBuffer, 0, readBuffer.Length, OnRead, null);
+        StartBeginRead();
     }
 
     public void CloseClient()
     {
-        client.Close();
+        client?.Close();
     }
 }
