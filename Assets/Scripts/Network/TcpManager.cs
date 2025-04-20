@@ -1,3 +1,4 @@
+using NUnit.Framework.Constraints;
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -6,18 +7,22 @@ using System.Net.Sockets;
 
 public class TcpManager : MonoBehaviourSingleton<TcpManager>
 {
+    private string _name = "Anonym";
     private readonly List<TcpConnectedClient> serverClients = new List<TcpConnectedClient>();
     private TcpConnectedClient connectedClient;
     private TcpListener listener;
     private bool clientJustConnected;
 
+    public string NameID { get { return _name; } }
     public bool IsServer { get; private set; }
 
     public event Action<byte[]> OnDataReceived;
     public event Action OnClientConnected;
 
+    public event Action GoToChatScreen;
+    public event Action GoToServerScren;
 
-    void Update()
+    private void Update()
     {
         if (IsServer)
             UpdateServer();
@@ -25,7 +30,7 @@ public class TcpManager : MonoBehaviourSingleton<TcpManager>
             UpdateClient();
     }
 
-    void OnDestroy()
+    private void OnDestroy()
     {
         listener?.Stop();
 
@@ -35,6 +40,27 @@ public class TcpManager : MonoBehaviourSingleton<TcpManager>
         connectedClient.CloseClient();
     }
 
+    public void TcpSetup(Role role, IPAddress ipAddress, int port, string name, string connectionType)
+    {
+        GoToChatScreen?.Invoke();
+        _name = name;
+        switch (role)
+        {
+            case Role.None:
+                break;
+            case Role.Client:
+                StartClient(ipAddress,port);
+                break;
+            case Role.Server:
+                StartServer(port);
+                break;
+            case Role.ServerClient:
+                StartServer(port);
+                break;
+            default:
+                break;
+        }
+    }
 
     private void UpdateServer()
     {
@@ -65,7 +91,7 @@ public class TcpManager : MonoBehaviourSingleton<TcpManager>
         clientJustConnected = true;
     }
 
-    public void StartServer(int port)
+    private void StartServer(int port)
     {
         IsServer = true;
         listener = new TcpListener(IPAddress.Any, port);
@@ -74,7 +100,7 @@ public class TcpManager : MonoBehaviourSingleton<TcpManager>
         listener.BeginAcceptTcpClient(OnClientConnectToServer, null);
     }
 
-    public void StartClient(IPAddress serverIp, int port)
+    private void StartClient(IPAddress serverIp, int port)
     {
         IsServer = false;
 

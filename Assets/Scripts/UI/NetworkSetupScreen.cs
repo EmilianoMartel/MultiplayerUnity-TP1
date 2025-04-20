@@ -58,7 +58,7 @@ public class NetworkSetupScreen : MonoBehaviour
         int port = Convert.ToInt32(_serverPortField.text);
         IPAddress ipAddress = (_selectedRole == Role.Server || _selectedRole == Role.ServerClient)? GetLocalIPAddress() : IPAddress.Parse(_serverIpField.text);
 
-        //TcpManager.Instance.TcpSetup(_selectedRole, ipAddress, port, _name.text, _connectionType.itemText.text);
+        TcpManager.Instance.TcpSetup(_selectedRole, ipAddress, port, _name.text, _connectionType.itemText.text);
     }
 
     private IPAddress GetLocalIPAddress()
