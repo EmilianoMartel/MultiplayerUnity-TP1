@@ -2,9 +2,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
 using System;
-using UnityEngine;
-using UnityEngine.Rendering;
-using UnityEditor.Experimental.GraphView;
 using System.Net;
 
 public class TcpConnectedClient
