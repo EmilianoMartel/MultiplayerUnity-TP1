@@ -66,6 +66,8 @@ public class TcpServerManager : ServerTypes
 
     public override void BroadcastData(byte[] data)
     {
+        if (serverClients.Count == 0) return;
+
         foreach (TcpClientManager client in serverClients)
             client.SendData(data);
     }
@@ -80,5 +82,75 @@ public class TcpServerManager : ServerTypes
 
 public class UdpServerManager : ServerTypes
 {
+    private UdpClient _listener;
+    private IPEndPoint _endPoint;
+    private readonly List<UdpClientManager> serverClients = new List<UdpClientManager>();
 
+    public override void Setup(IPAddress ip, int port)
+    {
+        _endPoint = new IPEndPoint(ip, port);
+        _listener = new UdpClient(_endPoint);
+
+        BeginReceive();
+    }
+
+    public override void Update()
+    {
+        foreach (UdpClientManager client in serverClients)
+        {
+            client.FlushReceivedData();
+        }
+    }
+
+    private void BeginReceive()
+    {
+        try
+        {
+            _listener.BeginReceive(OnReceiveData, null);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error starting UDP receive: {ex.Message}");
+        }
+    }
+
+    private void OnReceiveData(IAsyncResult asyncResult)
+    {
+        try
+        {
+            IPEndPoint receivedEndPoint = new IPEndPoint(IPAddress.Any, 0);
+            byte[] receivedData = _listener.EndReceive(asyncResult, ref receivedEndPoint);
+
+            lock (serverClients)
+            {
+                foreach (var client in serverClients)
+                {
+                    client.SendData(receivedData);
+                }
+            }
+
+            BeginReceive();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error processing UDP receive: {ex.Message}");
+        }
+    }
+
+    public override void Stop()
+    {
+        _listener.Close();
+    }
+
+    public override void BroadcastData(byte[] data)
+    {
+        if (_endPoint != null)
+        {
+            _listener.Send(data, data.Length, _endPoint);
+        }
+    }
+
+    public override void DisconnectClient(ClientTypes client)
+    {
+    }
 }

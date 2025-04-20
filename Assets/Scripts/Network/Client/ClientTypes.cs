@@ -57,6 +57,7 @@ public abstract class ClientTypes : INetworkManagment
 public class TcpClientManager : ClientTypes
 {
     private TcpClient _client = new();
+    private TcpClient _serverClient = null;
     private NetworkStream NetworkStream => _client?.GetStream();
 
     private bool clientJustConnected = false;
@@ -107,10 +108,15 @@ public class TcpClientManager : ClientTypes
         }
     }
 
+    public void SetupAsServer()
+    {
+        _serverClient = _client;
+    }
+
     public override void OnEndConnection(IAsyncResult asyncResult)
     {
         _client.EndConnect(asyncResult);
-        NetworkStream.BeginRead(p_readBuffer, 0, p_readBuffer.Length, OnRead, null);
+        NetworkStream.BeginRead(p_readBuffer, 0, p_readBuffer.Length, OnRead, _serverClient);
     }
 
     public override void CloseClient()
@@ -134,18 +140,78 @@ public class TcpClientManager : ClientTypes
 
 public class UdpClientManager : ClientTypes
 {
+
     private UdpClient _client = new();
+    private IPEndPoint _endPoint;
+    private bool _isConnected = false;
+
+    public override void Setup(IPAddress serverIp, int port)
+    {
+        _endPoint = new IPEndPoint(serverIp, port);
+        _isConnected = true;
+        BeginReceive();
+    }
 
     protected override void OnRead(IAsyncResult asyncResult)
     {
+        try
+        {
+            byte[] receivedData = _client.EndReceive(asyncResult, ref _endPoint);
+
+            lock (p_readHandler)
+            {
+                byte[] data = receivedData.TakeWhile(b => (char)b != '\0').ToArray();
+                p_dataReceived.Enqueue(data);
+            }
+
+            BeginReceive();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error while receiving data: {ex.Message}");
+        }
+    }
+
+    private void BeginReceive()
+    {
+        try
+        {
+            _client.BeginReceive(OnRead, null);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error starting receive: {ex.Message}");
+        }
     }
 
     public override void SendData(byte[] data)
     {
+        if (!_isConnected)
+        {
+            Console.WriteLine("UDP client is not connected.");
+            return;
+        }
+
+        try
+        {
+            _client.Send(data, data.Length, _endPoint);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error sending data: {ex.Message}");
+        }
     }
 
     public override void FlushReceivedData()
     {
+        lock (p_readHandler)
+        {
+            while (p_dataReceived.Count > 0)
+            {
+                byte[] data = p_dataReceived.Dequeue();
+                TcpManager.Instance.ReceiveData(data);
+            }
+        }
     }
 
     public override void OnEndConnection(IAsyncResult asyncResult)
@@ -155,5 +221,16 @@ public class UdpClientManager : ClientTypes
     public override void CloseClient()
     {
         _client.Close();
+        _isConnected = false;
+    }
+
+    public override void Stop()
+    {
+        CloseClient();
+    }
+
+    public override void Update()
+    {
+        FlushReceivedData();
     }
 }

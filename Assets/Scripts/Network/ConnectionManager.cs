@@ -1,4 +1,5 @@
 using System.Net;
+using UnityEditor.PackageManager;
 
 public class ConnectionManager
 {
@@ -12,7 +13,9 @@ public class ConnectionManager
         }
         else
         {
-            return new UdpClientManager();
+            UdpClientManager client = new UdpClientManager();
+            client.Setup(IPAddress.Any, port);
+            return client;
         }
     }
 
@@ -26,7 +29,31 @@ public class ConnectionManager
         }
         else
         {
-            return new UdpServerManager();
+            UdpServerManager server = new UdpServerManager();
+            server.Setup(IPAddress.Any, port);
+            return server;
+        }
+    }
+    
+    public static ServerTypes CreateServerClient(int port, string connectionType, out ClientTypes client)
+    {
+        if (connectionType == "TCP")
+        {
+            TcpServerManager server = new TcpServerManager();
+            server.Setup(IPAddress.Any, port);
+            client = new TcpClientManager();
+            client.Setup(IPAddress.Any, port);
+            if (client is TcpClientManager tcpClient)
+                tcpClient.SetupAsServer();
+            return server;
+        }
+        else
+        {
+            UdpServerManager server = new UdpServerManager();
+            server.Setup(IPAddress.Any, port);
+            client = new UdpClientManager();
+            client.Setup(IPAddress.Any, port);
+            return server;
         }
     }
 }
