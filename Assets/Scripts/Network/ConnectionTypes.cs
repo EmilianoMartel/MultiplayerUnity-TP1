@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
-
+/*
 public abstract class ConnectionTypes
 {
     public Action<byte[]> OnDataReceived;
@@ -170,4 +170,4 @@ public class UdpClientManager : ConnectionTypes
     {
         _udp?.Close();
     }
-}
+}*/

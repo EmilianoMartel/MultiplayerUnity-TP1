@@ -5,6 +5,14 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.Net.Sockets;
 
+public enum Role
+{
+    None,
+    Client,
+    Server,
+    ServerClient
+}
+
 public class NetworkSetupScreen : MonoBehaviour
 {
     [SerializeField] private TMP_InputField _name;
@@ -19,13 +27,13 @@ public class NetworkSetupScreen : MonoBehaviour
     private void OnEnable()
     {
         _connectionBehaviour.onValueChanged.AddListener(OnDropdownValueChanged);
-        _startSeverButton.onClick.AddListener(OnStartTcp);
+        _startSeverButton.onClick.AddListener(OnStartConnection);
     }
 
     private void OnDisable()
     {
         _connectionBehaviour.onValueChanged.RemoveListener(OnDropdownValueChanged);
-        _startSeverButton.onClick.RemoveListener(OnStartTcp);
+        _startSeverButton.onClick.RemoveListener(OnStartConnection);
     }
 
     private void Awake()
@@ -35,7 +43,7 @@ public class NetworkSetupScreen : MonoBehaviour
 
     private void OnDestroy()
     {
-        _startSeverButton.onClick.RemoveListener(OnStartTcp);
+        _startSeverButton.onClick.RemoveListener(OnStartConnection);
     }
 
     private void PopulateDropdown()
@@ -45,25 +53,17 @@ public class NetworkSetupScreen : MonoBehaviour
         _connectionBehaviour.AddOptions(new System.Collections.Generic.List<string>(roleNames));
     }
 
-    private void OnStartTcp()
+    private void OnStartConnection()
     {
         int port = Convert.ToInt32(_serverPortField.text);
         IPAddress ipAddress = (_selectedRole == Role.Server || _selectedRole == Role.ServerClient)? GetLocalIPAddress() : IPAddress.Parse(_serverIpField.text);
 
-        TcpManager.Instance.TcpSetup(_selectedRole, ipAddress, port, _name.text, _connectionType.itemText.text);
+        //TcpManager.Instance.TcpSetup(_selectedRole, ipAddress, port, _name.text, _connectionType.itemText.text);
     }
 
     private IPAddress GetLocalIPAddress()
     {
-        var host = Dns.GetHostEntry(Dns.GetHostName());
-        foreach (var ip in host.AddressList)
-        {
-            if (ip.AddressFamily == AddressFamily.InterNetwork)
-            {
-                return ip;
-            }
-        }
-        throw new Exception("No network adapters with an IPv4 address in the system!");
+        return IPAddress.Any;
     }
 
     private void OnDropdownValueChanged(int index)

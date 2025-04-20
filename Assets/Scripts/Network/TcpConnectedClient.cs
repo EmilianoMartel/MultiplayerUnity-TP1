@@ -2,43 +2,29 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
 using System;
-using UnityEngine;
-using UnityEngine.Rendering;
-using UnityEditor.Experimental.GraphView;
-using System.Net;
 
-public class TcpConnectedClient
-{
+public class TcpConnectedClient 
+{ 
     private TcpClient client;
-    private readonly Queue<byte[]> dataReceived = new();
-    private readonly byte[] readBuffer = new byte[5000];
-    private readonly object readHandler = new();
+    private Queue<byte[]> dataReceived = new Queue<byte[]>();
+    private byte[] readBuffer = new byte[5000];
+    private object readHandler = new object();
 
     private NetworkStream NetworkStream => client?.GetStream();
-
-    public Action<TcpConnectedClient> DisconectClient;
-    public Action<byte[]> RecibedData;
 
     public TcpConnectedClient(TcpClient client)
     {
         this.client = client;
-    }
 
-    public void StartBeginRead()
-    {
-        NetworkStream?.BeginRead(readBuffer, 0, readBuffer.Length, OnRead, null);
-    }
-
-    public void StartBeginConnected(IPAddress serverIp, int port, AsyncCallback onConnectClient)
-    {
-        client.BeginConnect(serverIp, port, onConnectClient, null);
+        if (TcpManager.Instance.IsServer)
+            NetworkStream.BeginRead(readBuffer, 0, readBuffer.Length, OnRead, null);
     }
 
     private void OnRead(IAsyncResult asyncResult)
     {
         if (NetworkStream.EndRead(asyncResult) == 0)
         {
-            DisconectClient?.Invoke(this);
+            TcpManager.Instance.DisconnectClient(this);
             return;
         }
 
@@ -54,7 +40,7 @@ public class TcpConnectedClient
 
     public void SendData(byte[] data)
     {
-        NetworkStream?.Write(data, 0, data.Length);
+        NetworkStream.Write(data, 0, data.Length);
     }
 
     public void FlushReceivedData()
@@ -62,18 +48,21 @@ public class TcpConnectedClient
         lock (readHandler)
         {
             while (dataReceived.Count > 0)
-                RecibedData?.Invoke(dataReceived.Dequeue());
+            {
+                byte[] data = dataReceived.Dequeue();
+                TcpManager.Instance.ReceiveData(data);
+            }
         }
     }
 
     public void OnEndConnection(IAsyncResult asyncResult)
     {
         client.EndConnect(asyncResult);
-        StartBeginRead();
+        NetworkStream.BeginRead(readBuffer, 0, readBuffer.Length, OnRead, null);
     }
 
     public void CloseClient()
     {
-        client?.Close();
+        client.Close();
     }
 }
