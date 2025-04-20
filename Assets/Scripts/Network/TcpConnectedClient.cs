@@ -4,7 +4,7 @@ using System.Net.Sockets;
 using System;
 
 public class TcpConnectedClient 
-{ 
+{
     private TcpClient client;
     private Queue<byte[]> dataReceived = new Queue<byte[]>();
     private byte[] readBuffer = new byte[5000];
@@ -16,17 +16,17 @@ public class TcpConnectedClient
     {
         this.client = client;
 
-        if (TcpManager.Instance.IsServer)
-            NetworkStream.BeginRead(readBuffer, 0, readBuffer.Length, OnRead, null);
+        //if (TcpManager.Instance.IsServer)
+        //    NetworkStream.BeginRead(readBuffer, 0, readBuffer.Length, OnRead, null);
     }
 
     private void OnRead(IAsyncResult asyncResult)
     {
-        if (NetworkStream.EndRead(asyncResult) == 0)
-        {
-            TcpManager.Instance.DisconnectClient(this);
-            return;
-        }
+        //if (NetworkStream.EndRead(asyncResult) == 0)
+        //{
+        //    TcpManager.Instance.DisconnectClient(this);
+        //    return;
+        //}
 
         lock (readHandler)
         {
