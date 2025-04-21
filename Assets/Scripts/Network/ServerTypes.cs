@@ -62,6 +62,8 @@ public class TcpServerManager : ServerTypes
     public override void Stop()
     {
         listener.Stop();
+        foreach (TcpClientManager client in serverClients)
+            client.Stop();
     }
 
     public override void BroadcastData(byte[] data)

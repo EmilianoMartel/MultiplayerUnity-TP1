@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using Unity.IO.LowLevel.Unsafe;
-using UnityEditor.PackageManager;
 
 public interface INetworkManagment
 {
@@ -77,7 +75,7 @@ public class TcpClientManager : ClientTypes
     {
         if (NetworkStream.EndRead(asyncResult) == 0)
         {
-            //TcpManager.Instance.DisconnectClient(this);
+            TcpManager.Instance.DisconnectClient(this);
             return;
         }
 

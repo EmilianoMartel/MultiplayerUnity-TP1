@@ -1,8 +1,5 @@
-using NUnit.Framework.Constraints;
 using System;
-using System.Collections.Generic;
 using System.Net;
-using System.Net.Sockets;
 
 
 public class TcpManager : MonoBehaviourSingleton<TcpManager>
@@ -12,7 +9,8 @@ public class TcpManager : MonoBehaviourSingleton<TcpManager>
     private ClientTypes _client = null;
 
     public string NameID { get { return _name; } }
-    
+    public bool IsServer => _server != null;
+
     public event Action GoToChatScreen;
     public event Action GoToServerScren;
 
@@ -26,14 +24,9 @@ public class TcpManager : MonoBehaviourSingleton<TcpManager>
 
     private void OnDestroy()
     {
-        /*
-        listener?.Stop();
         _server?.Stop();
-        foreach (TcpConnectedClient client in serverClients)
-            client.CloseClient();
-
-        connectedClient.CloseClient();
-    */}
+        _client?.Stop();
+    }
 
     public void TcpSetup(Role role, IPAddress ipAddress, int port, string name, string connectionType)
     {
@@ -50,13 +43,17 @@ public class TcpManager : MonoBehaviourSingleton<TcpManager>
                 StartServer(port, connectionType);
                 break;
             case Role.ServerClient:
-                StartServer(port, connectionType);
+                StartServerClient(port, connectionType);
                 break;
             default:
                 break;
         }
     }
 
+    private void StartServerClient(int port, string connectionType)
+    {
+        _server = ConnectionManager.CreateServerClient(port,connectionType, out _client);
+    }
 
     private void StartServer(int port, string connectionType)
     {
