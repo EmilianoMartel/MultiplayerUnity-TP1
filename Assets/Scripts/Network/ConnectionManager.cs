@@ -47,8 +47,6 @@ public class ConnectionManager
             client = new TcpClientManager(tcp);
             client.Setup(IPAddress.Loopback, port);
 
-            //if (client is TcpClientManager tcpClient)
-            //    tcpClient.SetupAsServer();
             return server;
         }
         else

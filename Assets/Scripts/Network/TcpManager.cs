@@ -18,8 +18,14 @@ public class TcpManager : MonoBehaviourSingleton<TcpManager>
 
     private void Update()
     {
-        _server?.Update();
-        _client?.Update();
+        if (_server != null)
+        {
+            _server?.Update();
+        }
+        else
+        {
+            _client?.Update();
+        }
     }
 
     private void OnDestroy()

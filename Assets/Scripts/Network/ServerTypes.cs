@@ -48,12 +48,13 @@ public class TcpServerManager : ServerTypes
 
     public override void Update()
     {
-        //foreach (TcpClientManager client in serverClients)
-        //    client.FlushReceivedData();
+        foreach (TcpClientManager client in serverClients)
+            client.FlushReceivedData();
     }
 
     private void OnClientConnectToServer(IAsyncResult asyncResult)
     {
+        Debug.Log("Client connected to server");
         TcpClient client = listener.EndAcceptTcpClient(asyncResult);
         TcpClientManager connectedClient = new TcpClientManager(client);
 

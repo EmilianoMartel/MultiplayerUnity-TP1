@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using Unity.IO.LowLevel.Unsafe;
 
 public interface INetworkManagment
 {
@@ -79,20 +81,28 @@ public class TcpClientManager : ClientTypes
 
     protected override void OnRead(IAsyncResult asyncResult)
     {
-        if (NetworkStream.EndRead(asyncResult) == 0)
+        UnityEngine.Debug.Log("Message received in client");
+        var bytesRead = NetworkStream.EndRead(asyncResult);
+
+        if (bytesRead <= 0)
         {
+            UnityEngine.Debug.Log($"Message received but no bytes read");
             TcpManager.Instance.DisconnectClient(this);
             return;
         }
 
         lock (p_readHandler)
         {
-            byte[] data = p_readBuffer.TakeWhile(b => (char)b != '\0').ToArray();
-            p_dataReceived.Enqueue(data);
+            UnityEngine.Debug.Log("Processing message received in client");
+            var dataToBroadcast = new byte[bytesRead];
+            Array.Copy(ReadBuffer, dataToBroadcast, bytesRead);
+            UnityEngine.Debug.Log($"Message enqueued in client");
+            p_dataReceived.Enqueue(dataToBroadcast);
         }
 
-        Array.Clear(p_readBuffer, 0, p_readBuffer.Length);
-        NetworkStream.BeginRead(p_readBuffer, 0, p_readBuffer.Length, OnRead, null);
+        Array.Clear(ReadBuffer, 0, ReadBuffer.Length);
+        NetworkStream?.BeginRead(ReadBuffer, 0, ReadBuffer.Length, OnRead, null);
+        UnityEngine.Debug.Log("Buffer cleared and client listening again");
     }
 
     public override void SendData(byte[] data)
@@ -108,6 +118,7 @@ public class TcpClientManager : ClientTypes
             {
                 byte[] data = p_dataReceived.Dequeue();
                 TcpManager.Instance.ReceiveData(data);
+                UnityEngine.Debug.Log("Message dequeued in client");
             }
         }
     }
@@ -132,7 +143,7 @@ public class TcpClientManager : ClientTypes
     {
         if (clientJustConnected)
             InvokeConnectedClient();
-
+        
         FlushReceivedData();
     }
 }
@@ -208,6 +219,7 @@ public class UdpClientManager : ClientTypes
             {
                 byte[] data = p_dataReceived.Dequeue();
                 TcpManager.Instance.ReceiveData(data);
+                UnityEngine.Debug.Log("Cliend dequeue data");
             }
         }
     }
