@@ -26,6 +26,8 @@ public class ServerTypes : INetworkManagment
         throw new NotImplementedException();
     }
 
+    protected virtual void OnRead(IAsyncResult asyncResult) { }
+
     public virtual void BroadcastData(byte[] data) { }
 
     public virtual void DisconnectClient(ClientTypes client) { }
@@ -46,16 +48,19 @@ public class TcpServerManager : ServerTypes
 
     public override void Update()
     {
-        foreach (TcpClientManager client in serverClients)
-            client.FlushReceivedData();
+        //foreach (TcpClientManager client in serverClients)
+        //    client.FlushReceivedData();
     }
 
     private void OnClientConnectToServer(IAsyncResult asyncResult)
     {
         TcpClient client = listener.EndAcceptTcpClient(asyncResult);
-        TcpClientManager connectedClient = new TcpClientManager();
+        TcpClientManager connectedClient = new TcpClientManager(client);
 
         serverClients.Add(connectedClient);
+
+        connectedClient.NetworkStream.BeginRead(connectedClient.ReadBuffer, 0, connectedClient.ReadBuffer.Length, OnRead, connectedClient);
+
         listener.BeginAcceptTcpClient(OnClientConnectToServer, null);
     }
 
@@ -64,6 +69,34 @@ public class TcpServerManager : ServerTypes
         listener.Stop();
         foreach (TcpClientManager client in serverClients)
             client.Stop();
+    }
+
+    protected override void OnRead(IAsyncResult asyncResult) 
+    {
+        var clientManager = (TcpClientManager)asyncResult.AsyncState;
+        
+        var bytesRead = clientManager.NetworkStream.EndRead(asyncResult);
+
+        if(bytesRead <= 0)
+        {
+            Debug.Log("Disconected client");
+            DisconnectClient(clientManager);
+            return;
+        }
+
+        byte[] dataToRead;
+
+        lock (clientManager.p_readHandler)
+        {
+            Debug.Log("Processing message");
+            dataToRead = new byte[bytesRead];
+            Array.Copy(clientManager.ReadBuffer,dataToRead,bytesRead);
+        }
+
+        Debug.Log("Sending message");
+        BroadcastData(dataToRead);
+        Array.Clear(clientManager.ReadBuffer,0,clientManager.ReadBuffer.Length);
+        clientManager.NetworkStream.BeginRead(clientManager.ReadBuffer, 0, clientManager.ReadBuffer.Length, OnRead, clientManager);
     }
 
     public override void BroadcastData(byte[] data)

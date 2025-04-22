@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Sockets;
 
 public class ConnectionManager
 {
@@ -6,7 +7,8 @@ public class ConnectionManager
     {
         if(connectionType == "TCP")
         {
-            TcpClientManager tcpClientManager = new TcpClientManager();
+            TcpClient client = new();
+            TcpClientManager tcpClientManager = new TcpClientManager(client);
             tcpClientManager.Setup(serverIp,port);
             return tcpClientManager;
         }
@@ -40,10 +42,13 @@ public class ConnectionManager
         {
             TcpServerManager server = new TcpServerManager();
             server.Setup(IPAddress.Any, port);
-            client = new TcpClientManager();
-            client.Setup(IPAddress.Any, port);
-            if (client is TcpClientManager tcpClient)
-                tcpClient.SetupAsServer();
+
+            TcpClient tcp = new();
+            client = new TcpClientManager(tcp);
+            client.Setup(IPAddress.Loopback, port);
+
+            //if (client is TcpClientManager tcpClient)
+            //    tcpClient.SetupAsServer();
             return server;
         }
         else

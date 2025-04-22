@@ -18,7 +18,7 @@ public abstract class ClientTypes : INetworkManagment
 {
     protected Queue<byte[]> p_dataReceived = new Queue<byte[]>();
     protected byte[] p_readBuffer = new byte[5000];
-    protected object p_readHandler = new object();
+    public object p_readHandler = new object();
 
     public event Action OnClientConnected;
 
@@ -54,11 +54,17 @@ public abstract class ClientTypes : INetworkManagment
 
 public class TcpClientManager : ClientTypes
 {
-    private TcpClient _client = new();
-    private TcpClient _serverClient = null;
-    private NetworkStream NetworkStream => _client?.GetStream();
+    private TcpClient _client;
+
+    public NetworkStream NetworkStream => _client?.GetStream();
+    public byte[] ReadBuffer { get { return p_readBuffer; } }
 
     private bool clientJustConnected = false;
+
+    public TcpClientManager(TcpClient client)
+    {
+        _client = client;
+    }
 
     public override void Setup(IPAddress serverIp, int port)
     {
@@ -106,15 +112,10 @@ public class TcpClientManager : ClientTypes
         }
     }
 
-    public void SetupAsServer()
-    {
-        _serverClient = _client;
-    }
-
     public override void OnEndConnection(IAsyncResult asyncResult)
     {
         _client.EndConnect(asyncResult);
-        NetworkStream.BeginRead(p_readBuffer, 0, p_readBuffer.Length, OnRead, _serverClient);
+        NetworkStream.BeginRead(p_readBuffer, 0, p_readBuffer.Length, OnRead, null);
     }
 
     public override void CloseClient()
@@ -138,7 +139,6 @@ public class TcpClientManager : ClientTypes
 
 public class UdpClientManager : ClientTypes
 {
-
     private UdpClient _client = new();
     private IPEndPoint _endPoint;
     private bool _isConnected = false;

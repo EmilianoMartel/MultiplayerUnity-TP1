@@ -28,7 +28,7 @@ public class TcpManager : MonoBehaviourSingleton<TcpManager>
         _client?.Stop();
     }
 
-    public void TcpSetup(Role role, IPAddress ipAddress, int port, string name, string connectionType)
+    public void NetworkSetup(Role role, IPAddress ipAddress, int port, string name, string connectionType)
     {
         GoToChatScreen?.Invoke();
         _name = name;
