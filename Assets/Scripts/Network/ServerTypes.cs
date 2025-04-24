@@ -110,9 +110,11 @@ public class TcpServerManager : ServerTypes
 
     public override void DisconnectClient(ClientTypes client)
     {
-        if (client is TcpClientManager tcpClientManager)
-            if (serverClients.Contains(tcpClientManager))
-                serverClients.Remove(tcpClientManager);
+        if (client is TcpClientManager tcpClientManager && serverClients.Contains(tcpClientManager))
+        {
+            serverClients.Remove(tcpClientManager);
+            tcpClientManager.Stop();
+        }
     }
 }
 

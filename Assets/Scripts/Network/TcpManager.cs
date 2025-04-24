@@ -18,14 +18,7 @@ public class TcpManager : MonoBehaviourSingleton<TcpManager>
 
     private void Update()
     {
-        if (_server != null)
-        {
-            _server?.Update();
-        }
-        else
-        {
-            _client?.Update();
-        }
+        _client?.Update();
     }
 
     private void OnDestroy()
@@ -43,7 +36,7 @@ public class TcpManager : MonoBehaviourSingleton<TcpManager>
             case Role.None:
                 break;
             case Role.Client:
-                StartClient(ipAddress,port,connectionType);
+                StartClient(ipAddress, port, connectionType);
                 break;
             case Role.Server:
                 StartServer(port, connectionType);
@@ -58,17 +51,17 @@ public class TcpManager : MonoBehaviourSingleton<TcpManager>
 
     private void StartServerClient(int port, string connectionType)
     {
-        _server = ConnectionManager.CreateServerClient(port,connectionType, out _client);
+        _server = ConnectionManager.CreateServerClient(port, connectionType, out _client);
     }
 
     private void StartServer(int port, string connectionType)
     {
-        _server = ConnectionManager.CreateServer(port,connectionType);
+        _server = ConnectionManager.CreateServer(port, connectionType);
     }
 
     private void StartClient(IPAddress serverIp, int port, string connectionType)
     {
-        _client = ConnectionManager.CreateClient(serverIp,port,connectionType);
+        _client = ConnectionManager.CreateClient(serverIp, port, connectionType);
     }
 
     public void ReceiveData(byte[] data)
@@ -83,7 +76,7 @@ public class TcpManager : MonoBehaviourSingleton<TcpManager>
 
     public void BroadcastData(byte[] data)
     {
-        _server.BroadcastData(data);
+        _server?.BroadcastData(data);
     }
 
     public void SendDataToServer(byte[] data)

@@ -33,9 +33,6 @@ public class ChatScreen : MonoBehaviour
 
     private void OnReceiveData(byte[] data)
     {
-        if (TcpManager.Instance.IsServer)
-            TcpManager.Instance.BroadcastData(data);
-
         MessageData message = MessageConverter.BytesToMessage(data);
 
         Message temp = Instantiate(_chatText, _contentParent);

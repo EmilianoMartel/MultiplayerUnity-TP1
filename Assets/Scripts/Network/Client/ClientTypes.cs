@@ -96,8 +96,8 @@ public class TcpClientManager : ClientTypes
             UnityEngine.Debug.Log("Processing message received in client");
             var dataToBroadcast = new byte[bytesRead];
             Array.Copy(ReadBuffer, dataToBroadcast, bytesRead);
-            UnityEngine.Debug.Log($"Message enqueued in client");
             p_dataReceived.Enqueue(dataToBroadcast);
+            UnityEngine.Debug.Log($"Message enqueued in client: {p_dataReceived.Count}");
         }
 
         Array.Clear(ReadBuffer, 0, ReadBuffer.Length);
@@ -143,7 +143,7 @@ public class TcpClientManager : ClientTypes
     {
         if (clientJustConnected)
             InvokeConnectedClient();
-        
+
         FlushReceivedData();
     }
 }
