@@ -54,11 +54,7 @@ public class ChatScreen : MonoBehaviour
 
         byte[] data = MessageConverter.MessageToBytes(msgData);
 
-        Message temp = Instantiate(_chatText, _contentParent);
-        temp.SetMessage(msgData);
-        UpdateScroll();
-
-        TcpManager.Instance.ManageData(data);
+        TcpManager.Instance.SendDataToServer(data);
 
         _messageInputField.text = string.Empty;
     }

@@ -1,130 +1,86 @@
-using NUnit.Framework;
 using System;
-using System.Collections.Generic;
 using System.Net;
-using System.Net.Sockets;
-using UnityEditor.Experimental.GraphView;
-using UnityEngine;
 
-public enum Role
-{
-    None,
-    Client,
-    Server,
-    ServerClient
-}
 
 public class TcpManager : MonoBehaviourSingleton<TcpManager>
 {
     private string _name = "Anonym";
-    private List<ConnectionTypes> _networkManagers = new();
-    private bool _wasSetted = false;
+    private ServerTypes _server = null;
+    private ClientTypes _client = null;
 
     public string NameID { get { return _name; } }
+    public bool IsServer => _server != null;
 
-    public Action<byte[]> OnDataReceived;
-    public Action GoToChatScreen;
-    public Action GoToServerScren;
+    public event Action GoToChatScreen;
+    public event Action GoToServerScren;
+
+    public event Action<byte[]> OnDataReceived;
 
     private void Update()
     {
-        if (!_wasSetted) return;
-
-        foreach (var tcp in _networkManagers)
-            tcp.Update();
+        _client?.Update();
     }
 
-    public bool TcpSetup(Role role, IPAddress serverIp, int port, string name, string typeConecction)
+    private void OnDestroy()
     {
-        if (!string.IsNullOrEmpty(name)) _name = name;
+        _server?.Stop();
+        _client?.Stop();
+    }
 
+    public void NetworkSetup(Role role, IPAddress ipAddress, int port, string name, string connectionType)
+    {
+        GoToChatScreen?.Invoke();
+        _name = name;
         switch (role)
         {
             case Role.None:
-                return false;
-
+                break;
             case Role.Client:
-                _wasSetted = true;
-
-                GoToChatScreen?.Invoke();
-                return true;
-
+                StartClient(ipAddress, port, connectionType);
+                break;
             case Role.Server:
-                _wasSetted = true;
-                _networkManagers.Add(new TcpServerManager(serverIp, port));
-                GoToServerScren?.Invoke();
-                return true;
-
+                StartServer(port, connectionType);
+                break;
             case Role.ServerClient:
-                _wasSetted = true;
-                _networkManagers.Add(new TcpServerManager(serverIp, port));
-                _networkManagers.Add(new TcpClientManager(serverIp, port));
-                _networkManagers[0].OnDataReceived += OnDataReceived;
-                GoToChatScreen?.Invoke();
-                return true;
-        }
-
-        return false;
-    }
-
-    public void ManageData(byte[] data)
-    {
-        foreach (var tcp in _networkManagers)
-        {
-            switch (tcp)
-            {
-                case TcpServerManager server:
-                    server.BroadcastData(data);
-                    break;
-                case TcpClientManager client:
-                    client.SendDataToServer(data);
-                    break;
-            }
+                StartServerClient(port, connectionType);
+                break;
+            default:
+                break;
         }
     }
 
-    private void ConectionElection()
+    private void StartServerClient(int port, string connectionType)
     {
-
+        _server = ConnectionManager.CreateServerClient(port, connectionType, out _client);
     }
 
-    private void CreateServer(IPAddress serverIp, int port, string typeConecction)
+    private void StartServer(int port, string connectionType)
     {
-        if (typeConecction == "TCP")
-            CreateTcpServer(serverIp, port);
-        else
-            CreateUdpServer(serverIp, port);
+        _server = ConnectionManager.CreateServer(port, connectionType);
     }
 
-    private void CreateTcpServer(IPAddress serverIp, int port)
+    private void StartClient(IPAddress serverIp, int port, string connectionType)
     {
-        _networkManagers.Add(new TcpServerManager(serverIp, port));
+        _client = ConnectionManager.CreateClient(serverIp, port, connectionType);
     }
 
-    private void CreateUdpServer(IPAddress serverIp, int port)
+    public void ReceiveData(byte[] data)
     {
-        _networkManagers.Add(new UdpServerManager(port));
+        OnDataReceived?.Invoke(data);
     }
 
-    private void CreateClient(IPAddress serverIp, int port, string typeConecction)
+    public void DisconnectClient(ClientTypes client)
     {
-        if (typeConecction == "TCP")
-            CreateTcpClient(serverIp,port);
-        else
-            CreateUdpClient(serverIp,port);
+        _server.DisconnectClient(client);
     }
 
-    private void CreateTcpClient(IPAddress serverIp, int port)
+    public void BroadcastData(byte[] data)
     {
-        TcpClientManager temp = new TcpClientManager(serverIp, port);
-        _networkManagers.Add(temp);
-        temp.OnDataReceived += OnDataReceived;
+        _server?.BroadcastData(data);
     }
 
-    private void CreateUdpClient(IPAddress serverIp, int port)
+    public void SendDataToServer(byte[] data)
     {
-        UdpClientManager temp = new UdpClientManager(serverIp, port);
-        _networkManagers.Add(temp);
-        temp.OnDataReceived += OnDataReceived;
+        _client.SendData(data);
     }
 }

@@ -17,7 +17,6 @@ public class MessageConverter
     public static MessageData BytesToMessage(byte[] data)
     {
         string msg = Encoding.UTF8.GetString(data);
-        Debug.Log(msg);
 
         string[] parts = msg.Split(new[] { "//*//" }, StringSplitOptions.None);
 
