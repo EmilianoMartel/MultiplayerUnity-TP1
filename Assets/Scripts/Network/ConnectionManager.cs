@@ -14,8 +14,9 @@ public class ConnectionManager
         }
         else
         {
-            UdpClientManager client = new UdpClientManager();
-            client.Setup(IPAddress.Any, port);
+            UdpClient udpClient = new();
+            UdpClientManager client = new UdpClientManager(udpClient);
+            client.Setup(serverIp, port);
             return client;
         }
     }
@@ -53,8 +54,12 @@ public class ConnectionManager
         {
             UdpServerManager server = new UdpServerManager();
             server.Setup(IPAddress.Any, port);
-            client = new UdpClientManager();
-            client.Setup(IPAddress.Any, port);
+
+            IPAddress ip = IPAddress.Parse("127.0.0.1");
+            UdpClient udpClient = new();
+
+            client = new UdpClientManager(udpClient);
+            client.Setup(ip, port);
             return server;
         }
     }
