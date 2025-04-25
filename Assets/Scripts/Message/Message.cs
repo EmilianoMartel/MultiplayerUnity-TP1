@@ -2,15 +2,22 @@ using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 public class Message : MonoBehaviour, IPointerClickHandler
 {
     [SerializeField] private TMP_Text _name;
     [SerializeField] private TMP_Text _message;
+    [SerializeField] private Image _background;
+
+    [SerializeField] private Color _selectedColor;
+    [SerializeField] private Color _unselectedColor;
 
     private int _messageDataID;
 
-    public Action<int> SelectedMessageToRespond;
+    public int ID {  get { return _messageDataID; } }
+
+    public Action<Message> SelectedMessageToRespond;
 
     public void SetMessage(MessageData data)
     {
@@ -21,6 +28,17 @@ public class Message : MonoBehaviour, IPointerClickHandler
 
     public void OnPointerClick(PointerEventData eventData)
     {
-        SelectedMessageToRespond?.Invoke(_messageDataID);
+        Debug.Log($"{name} Message was selected");
+        SelectedMessageToRespond?.Invoke(this);
+    }
+
+    public void Selected()
+    {
+        _background.color = _selectedColor;
+    }
+
+    public void Unselected()
+    {
+        _background.color= _unselectedColor;
     }
 }

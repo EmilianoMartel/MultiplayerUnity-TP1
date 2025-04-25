@@ -18,6 +18,8 @@ public class ChatScreen : MonoBehaviour
 
     private int IDMessageToRespond = -1;
 
+    private Message _currentSelectedMessage;
+
     private void Start()
     {
         TcpManager.Instance.OnDataReceived += OnReceiveData;
@@ -47,6 +49,7 @@ public class ChatScreen : MonoBehaviour
         MessageData message = MessageConverter.BytesToMessage(data);
 
         Message temp = Instantiate(_chatText, _contentParent);
+        temp.name = message.MessageID + "_from_" + message.ClientID;
         temp.SetMessage(message);
         _messages.Add(temp);
         temp.SelectedMessageToRespond += SelectedMessage;
@@ -71,10 +74,20 @@ public class ChatScreen : MonoBehaviour
 
         _messageInputField.text = string.Empty;
         IDMessageToRespond = -1;
+
+        if (_currentSelectedMessage != null)
+            _currentSelectedMessage.Unselected();
+
+        _currentSelectedMessage = null;
     }
 
-    private void SelectedMessage(int ID)
+    private void SelectedMessage(Message message)
     {
-        IDMessageToRespond = ID;
+        IDMessageToRespond = message.ID;
+        if (_currentSelectedMessage != null)
+            _currentSelectedMessage.Unselected();
+
+        _currentSelectedMessage = message;
+        _currentSelectedMessage.Selected();
     }
 }
