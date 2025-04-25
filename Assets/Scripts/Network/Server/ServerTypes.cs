@@ -7,6 +7,8 @@ using UnityEngine;
 
 public class ServerTypes : INetworkManagment
 {
+    protected List<MessageData> messages = new List<MessageData>();
+
     public event Action OnClientConnected;
 
     public void Connect(IAsyncResult asyncResult)
@@ -31,4 +33,12 @@ public class ServerTypes : INetworkManagment
     public virtual void BroadcastData(byte[] data) { }
 
     public virtual void DisconnectClient(ClientTypes client) { }
+
+    protected MessageData AddMessageToList(MessageData data)
+    {
+        MessageData temp = data;
+        temp.MessageID = messages.Count;
+        messages.Add(temp);
+        return temp;
+    }
 }

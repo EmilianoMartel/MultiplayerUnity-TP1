@@ -75,6 +75,12 @@ public class TcpServerManager : ServerTypes
     {
         if (serverClients.Count == 0) return;
 
+        MessageData messageToSend = MessageConverter.BytesToMessage(data);
+        messageToSend = AddMessageToList(messageToSend);
+
+        //Here the code should check if the message is replaying to another.
+        data = MessageConverter.MessageToBytes(messageToSend);
+
         foreach (TcpClientManager client in serverClients)
             client.SendData(data);
     }

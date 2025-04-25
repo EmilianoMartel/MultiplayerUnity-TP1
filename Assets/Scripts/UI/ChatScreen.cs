@@ -3,6 +3,8 @@ using System.Text;
 using TMPro;
 using UnityEngine.UI;
 using UnityEngine;
+using NUnit.Framework;
+using System.Collections.Generic;
 
 public class ChatScreen : MonoBehaviour
 {
@@ -11,6 +13,10 @@ public class ChatScreen : MonoBehaviour
     [SerializeField] private Message _chatText;
     [SerializeField] private TMP_InputField _messageInputField;
     [SerializeField] private Button _sendButton;
+
+    private List<Message> _messages = new();
+
+    private int IDMessageToRespond = -1;
 
     private void Start()
     {
@@ -24,6 +30,11 @@ public class ChatScreen : MonoBehaviour
         TcpManager.Instance.OnDataReceived -= OnReceiveData;
 
         _sendButton.onClick.RemoveListener(OnSendMessage);
+
+        for (int i = 0; i < _messages.Count; i++)
+        {
+            _messages[i].SelectedMessageToRespond -= SelectedMessage;
+        }
     }
 
     private void UpdateScroll()
@@ -37,7 +48,8 @@ public class ChatScreen : MonoBehaviour
 
         Message temp = Instantiate(_chatText, _contentParent);
         temp.SetMessage(message);
-
+        _messages.Add(temp);
+        temp.SelectedMessageToRespond += SelectedMessage;
         UpdateScroll();
     }
 
@@ -49,7 +61,8 @@ public class ChatScreen : MonoBehaviour
         MessageData msgData = new MessageData
         {
             ClientID = TcpManager.Instance.NameID,
-            Message = _messageInputField.text
+            Message = _messageInputField.text,
+            MessageToRespondID = IDMessageToRespond
         };
 
         byte[] data = MessageConverter.MessageToBytes(msgData);
@@ -57,5 +70,11 @@ public class ChatScreen : MonoBehaviour
         TcpManager.Instance.SendDataToServer(data);
 
         _messageInputField.text = string.Empty;
+        IDMessageToRespond = -1;
+    }
+
+    private void SelectedMessage(int ID)
+    {
+        IDMessageToRespond = ID;
     }
 }
