@@ -16,15 +16,15 @@ public class TcpManager : MonoBehaviourSingleton<TcpManager>
 
     public event Action<byte[]> OnDataReceived;
 
-    private void Update()
-    {
-        _client?.Update();
-    }
-
-    private void OnDestroy()
+    private void OnDisable()
     {
         _server?.Stop();
         _client?.Stop();
+    }
+
+    private void Update()
+    {
+        _client?.Update();
     }
 
     public void NetworkSetup(Role role, IPAddress ipAddress, int port, string name, string connectionType)
